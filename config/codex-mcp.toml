@@ -1,21 +1,31 @@
-# Machine-specific browser entries for /home/myuser/.codex/config.toml.
-# Merge these sections; preserve unrelated Codex settings.
+# EXAMPLE ONLY: run scripts/generate-config.py for your actual paths and display.
+# Generated browser entries. Merge into your Codex config; do not replace it.
 
 [mcp_servers.playwright]
-command = "/home/myuser/.local/share/mise/installs/node/latest/bin/node"
-args = ["/home/myuser/.local/share/codex-browser-tools/node_modules/@playwright/mcp/cli.js", "--executable-path", "/usr/local/bin/chromium", "--sandbox", "--user-data-dir", "/home/myuser/.local/share/codex-browser-tools/profiles/playwright"]
+command = "/usr/bin/node"
+args = ["/path/to/codex-browser-tools/node_modules/@playwright/mcp/cli.js", "--executable-path", "/usr/bin/chromium", "--sandbox", "--user-data-dir", "/home/you/.local/share/codex-browser-tools/profiles/playwright"]
 
 [mcp_servers.playwright.env]
 DISPLAY = ":0"
 WAYLAND_DISPLAY = "wayland-1"
-XDG_RUNTIME_DIR = "/run/user/1001"
+XDG_RUNTIME_DIR = "/run/user/1000"
 
 [mcp_servers.chrome-devtools]
-command = "/home/myuser/.local/share/mise/installs/node/latest/bin/node"
-args = ["/home/myuser/.local/share/codex-browser-tools/node_modules/chrome-devtools-mcp/build/src/bin/chrome-devtools-mcp.js", "--executablePath=/usr/local/bin/chromium", "--user-data-dir=/home/myuser/.local/share/codex-browser-tools/profiles/chrome-devtools", "--no-usage-statistics", "--no-performance-crux", "--no-page-id-routing"]
+command = "/usr/bin/node"
+args = ["/path/to/codex-browser-tools/node_modules/chrome-devtools-mcp/build/src/bin/chrome-devtools-mcp.js", "--executablePath=/usr/bin/chromium", "--user-data-dir=/home/you/.local/share/codex-browser-tools/profiles/chrome-devtools", "--no-usage-statistics", "--no-performance-crux", "--no-page-id-routing"]
 
 [mcp_servers.chrome-devtools.env]
 DISPLAY = ":0"
 WAYLAND_DISPLAY = "wayland-1"
-XDG_RUNTIME_DIR = "/run/user/1001"
+XDG_RUNTIME_DIR = "/run/user/1000"
 CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS = "1"
+
+[mcp_servers.playwright-personal]
+command = "/usr/bin/node"
+args = ["/path/to/codex-browser-tools/node_modules/@playwright/mcp/cli.js", "--extension", "--executable-path", "/usr/bin/chromium", "--user-data-dir", "/home/you/.config/chromium"]
+
+[mcp_servers.playwright-personal.env]
+DISPLAY = ":0"
+WAYLAND_DISPLAY = "wayland-1"
+XDG_RUNTIME_DIR = "/run/user/1000"
+# Optional: add PLAYWRIGHT_MCP_EXTENSION_TOKEN here in your LOCAL Codex config.
