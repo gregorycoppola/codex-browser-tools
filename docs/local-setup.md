@@ -2,6 +2,7 @@
 
 This records the machine where the setup was developed. Other users should use
 the generator and their own paths, displays, and extension token.
+Home-directory examples use `myuser` as a placeholder for your Linux username.
 
 | Item | Local value |
 | --- | --- |
