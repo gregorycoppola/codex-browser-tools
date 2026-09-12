@@ -1,0 +1,7 @@
+node_modules/
+profiles/
+*.log
+__pycache__/
+.env
+.env.*
+.playwright-mcp/
