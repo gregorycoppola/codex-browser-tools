@@ -38,8 +38,11 @@ Your Codex permission settings remain a separate choice.
 
 Run in a terminal **inside your graphical desktop session**:
 
+Replace `username` in the clone URL with the GitHub account that owns your copy
+of this repository.
+
 ```bash
-git clone https://github.com/gregorycoppola/codex-browser-tools.git
+git clone https://github.com/username/codex-browser-tools.git
 cd codex-browser-tools
 env PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 PUPPETEER_SKIP_DOWNLOAD=true npm ci --no-audit --no-fund
 python3 scripts/generate-config.py
