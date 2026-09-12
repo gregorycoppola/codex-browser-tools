@@ -1,7 +1,16 @@
-import json, os, re, selectors, subprocess, threading, http.server
+import json, os, re, selectors, subprocess, threading, http.server, time, tomllib
+from pathlib import Path
 
-BASE = '/home/myuser/.local/share/codex-browser-tools/node_modules/'
-NODE = '/home/myuser/.local/share/mise/installs/node/latest/bin/node'
+CONFIG = tomllib.loads((Path.home() / '.codex/config.toml').read_text())['mcp_servers']
+
+def verify_window():
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        clients = json.loads(subprocess.check_output(['hyprctl', 'clients', '-j']))
+        if any(c['mapped'] and 'Clicked successfully' in c['title'] for c in clients):
+            return
+        time.sleep(0.1)
+    raise AssertionError('No mapped Chromium test window found on the desktop')
 class Page(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -12,13 +21,23 @@ class Page(http.server.BaseHTTPRequestHandler):
 server = http.server.HTTPServer(('127.0.0.1', 0), Page)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 url = 'http://127.0.0.1:' + str(server.server_port)
-for name, script, args in [
-    ('playwright', '@playwright/mcp/cli.js', ['--executable-path', '/usr/local/bin/chromium', '--isolated', '--sandbox']),
-    ('chrome-devtools', 'chrome-devtools-mcp/build/src/bin/chrome-devtools-mcp.js', ['--executablePath=/usr/local/bin/chromium', '--isolated', '--no-usage-statistics', '--no-performance-crux', '--no-page-id-routing']),
-]:
+for name in ['playwright', 'chrome-devtools']:
+    config = CONFIG[name]
+    # Exercise the installed configuration, replacing only the persistent profile.
+    args = []
+    skip = False
+    for arg in config['args']:
+        if skip:
+            skip = False
+            continue
+        if arg == '--user-data-dir':
+            skip = True
+        elif not arg.startswith('--user-data-dir='):
+            args.append(arg)
+    args.append('--isolated')
     log = open('/tmp/codex-' + name + '-smoke.log', 'w')
-    env = dict(os.environ, CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS='1')
-    p = subprocess.Popen([NODE, BASE + script] + args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=log, text=True, env=env)
+    env = dict(os.environ, **config.get('env', {}))
+    p = subprocess.Popen([config['command']] + args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=log, text=True, env=env)
     sel = selectors.DefaultSelector(); sel.register(p.stdout, selectors.EVENT_READ)
     seq = 0
     def send(message):
@@ -50,12 +69,14 @@ for name, script, args in [
             ref = re.search(r'button "Test button" \[ref=([^\]]+)\]', snapshot).group(1)
             call('browser_click', dict(target=ref))
             result = call('browser_snapshot', {})
-            call('browser_close', {})
         else:
             call('new_page', dict(url=url))
             result = call('evaluate_script', dict(function="() => { document.querySelector('button').click(); return document.title; }"))
         assert 'Clicked successfully' in json.dumps(result), result
-        print(name, 'PASS: launched Chromium, loaded page, clicked button, verified title', flush=True)
+        verify_window()
+        print(name, 'PASS: visible desktop window, loaded page, clicked button, verified title', flush=True)
+        if name == 'playwright':
+            call('browser_close', {})
     finally:
         p.stdin.close()
         try: p.wait(timeout=10)
