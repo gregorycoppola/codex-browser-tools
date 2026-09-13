@@ -172,17 +172,28 @@ python3 scripts/personal-browser-check.py
 python3 scripts/personal-browser-check.py --github-login
 ```
 
-The first lists tabs shared with that client. The optional GitHub check opens a
-new tab, reads GitHub's signed-in username metadata, then closes only that test
-tab. A `null` login means the page did not expose a signed-in username. Connection
-`PASS` alone does not assert a GitHub login. The check disconnects afterward;
+The default check confirms the connection without printing personal tab details.
+The optional GitHub check opens a new tab, checks whether signed-in username
+metadata is present, then closes only that test tab. It does not print the
+username. `absent` or `unavailable` does not establish a login; connection `PASS`
+alone does not assert a GitHub login.
+
+Use `--show-details` only when you intentionally want personal tab titles/URLs
+or, with `--github-login`, the account username printed. This output can contain
+private information even after token redaction; do not share it.
+
+The check disconnects afterward;
 Codex establishes its own connection when you next use its tools. A connection
 welcome tab may remain. Both checks accept `--config PATH`.
 
 Logs and browser artifacts go into private, per-run
 `/tmp/codex-browser-check-*` directories; paths are printed in the output. These
 may contain personal URLs or tokens in server-generated artifacts. Do not share
-raw artifacts. Printed results and MCP errors redact the configured token.
+raw artifacts. Detailed output redacts the extension token from configuration
+or the inherited environment, including URL-encoded forms. Server error payloads
+are omitted from terminal errors because they may contain private page data.
+These protections apply to the check scripts; direct MCP tools in Codex can still
+return private browser content and connection URLs into the conversation.
 Delete a run's directory when it is no longer needed.
 
 Run configuration tests without opening browsers:

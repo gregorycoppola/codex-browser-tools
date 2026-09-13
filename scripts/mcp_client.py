@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import time
 import tomllib
+from urllib.parse import quote, quote_plus
 
 
 def config_path():
@@ -21,7 +22,8 @@ class Client:
     def __init__(self, entry, name, isolated=False, timeout=120):
         self.entry, self.name, self.timeout = entry, name, timeout
         self.sequence, self.buffer = 0, b''
-        self.token = entry.get('env', {}).get('PLAYWRIGHT_MCP_EXTENSION_TOKEN', '')
+        env = dict(os.environ, **entry.get('env', {}))
+        self.token = env.get('PLAYWRIGHT_MCP_EXTENSION_TOKEN', '')
         self.artifacts = Path(tempfile.mkdtemp(prefix='codex-browser-check-'))
         self.log = (self.artifacts / 'server.log').open('wb')
         args, skip = [], False
@@ -38,7 +40,7 @@ class Client:
             args += ['--output-dir', str(self.artifacts)]
         try:
             self.process = subprocess.Popen(
-                [entry['command'], *args], env=dict(os.environ, **entry.get('env', {})),
+                [entry['command'], *args], env=env,
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.log,
             )
         except Exception:
@@ -48,7 +50,10 @@ class Client:
         self.selector.register(self.process.stdout, selectors.EVENT_READ)
 
     def redact(self, text):
-        return text.replace(self.token, '[REDACTED]') if self.token else text
+        if self.token:
+            for value in sorted({self.token, quote(self.token, safe=''), quote_plus(self.token)}, key=len, reverse=True):
+                text = text.replace(value, '[REDACTED]')
+        return text
 
     def send(self, message):
         self.process.stdin.write(json.dumps(dict(jsonrpc='2.0', **message)).encode() + b'\n')
@@ -72,7 +77,8 @@ class Client:
                     continue
                 result = message.get('result', {})
                 if 'error' in message or result.get('isError'):
-                    raise RuntimeError(self.redact(str(message.get('error', result))))
+                    # Server errors can embed page contents, URLs, and credentials.
+                    raise RuntimeError(f'{method} failed; server response omitted for privacy')
                 return result
         raise TimeoutError(f'{method} timed out; check extension approval and logs: {self.artifacts}')
 

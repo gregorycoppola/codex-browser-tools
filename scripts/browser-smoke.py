@@ -60,7 +60,7 @@ def main():
                 else:
                     client.call('new_page', dict(url=url))
                     result = client.call('evaluate_script', dict(function="() => { document.querySelector('button').click(); return document.title; }"))
-                assert title in json.dumps(result), result
+                assert title in json.dumps(result), 'Expected test title missing; response omitted for privacy'
                 if not args.skip_window_check:
                     verify_window(title)
                 print(name, 'PASS: clicked button and verified title;' + (' visibility NOT checked' if args.skip_window_check else ' desktop window verified'), flush=True)
